@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useUser } from '../../src/hooks/useUser';
 
 const { width } = Dimensions.get('window');
 
@@ -31,6 +32,7 @@ const Separator = () => <View style={styles.separator} />;
 export default function ExploreScreen() {
   const router = useRouter();
   const { tasks, loading } = useTasks();
+  const { user } = useUser();
 
   const TaskCard = ({ task }: { task: Task }) => {
     const categoryInfo = categoryIcons[task.category] || categoryIcons.users;
@@ -78,7 +80,7 @@ export default function ExploreScreen() {
               style={styles.avatar} 
             />
           </View>
-          <Text style={styles.greeting}>Olá de volta,{'\n'}Amanda</Text>
+          <Text style={styles.greeting}>Olá de volta,{'\n'}{user?.name || 'Usuário'}</Text>
         </View>
         <TouchableOpacity style={styles.bellButton}>
           <FontAwesome name="bell" size={26} color="#8453CC" />
