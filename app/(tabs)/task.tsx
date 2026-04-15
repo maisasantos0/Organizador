@@ -1,5 +1,6 @@
 import { Task, useTasks } from '@/contexts/TaskContext';
 import { Feather, FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -21,6 +22,8 @@ export default function NewTaskScreen() {
   const params = useLocalSearchParams();
   const [taskName, setTaskName] = useState('');
   const [taskDate, setTaskDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('users');
   const [isEditing, setIsEditing] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -31,6 +34,7 @@ export default function NewTaskScreen() {
       if (task) {
         setTaskName(task.name);
         setTaskDate(task.date);
+        setSelectedDate(new Date(task.date));
         setSelectedCategory(task.category);
         setIsEditing(true);
         setEditingTask(task);
@@ -38,14 +42,23 @@ export default function NewTaskScreen() {
     }
   }, [params.taskId, tasks]);
 
+  const handleDateChange = (event: any, date?: Date) => {
+    setShowDatePicker(false);
+    if (date) {
+      setSelectedDate(date);
+      const isoDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      setTaskDate(isoDate);
+    }
+  };
+
   const handleDelete = () => {
     Alert.alert(
       'Excluir Tarefa',
       'Tem certeza que deseja excluir esta tarefa?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Excluir', 
+        {
+          text: 'Excluir',
           style: 'destructive',
           onPress: async () => {
             if (editingTask) {
@@ -101,34 +114,34 @@ export default function NewTaskScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => router.back()}
-        >
-          <Feather name="chevron-left" size={28} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {isEditing ? 'Editar Tarefa' : 'Nova Tarefa'}
-        </Text>
-        {isEditing ? (
-          <TouchableOpacity 
-            style={styles.deleteButton} 
-            onPress={handleDelete}
-          >
-            <Feather name="trash-2" size={24} color="white" />
-          </TouchableOpacity>
-        ) : (
-          <View style={{ width: 28 }} />
-        )}
-      </View>
-
-      {/* Formulário num Card Arredondado */}
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => router.back()}
+          >
+            <Feather name="chevron-left" size={28} color="white" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {isEditing ? 'Editar Tarefa' : 'Nova Tarefa'}
+          </Text>
+          {isEditing ? (
+            <TouchableOpacity 
+              style={styles.deleteButton} 
+              onPress={handleDelete}
+            >
+              <Feather name="trash-2" size={24} color="white" />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 28 }} />
+          )}
+        </View>
+
+        {/* Formulário num Card Arredondado */}
         <View style={styles.formCard}>
           <Text style={styles.sectionTitle}>O que vamos fazer?</Text>
           
@@ -147,14 +160,31 @@ export default function NewTaskScreen() {
           {/* Input: Data/Hora */}
           <View style={styles.inputContainer}>
             <Feather name="calendar" size={20} color="#6D42A4" style={styles.inputIcon} />
-            <TextInput 
+            <TouchableOpacity
               style={styles.input}
-              placeholder="Data (ex: 10 Julho)"
-              placeholderTextColor="#C2AEE0"
-              value={taskDate}
-              onChangeText={setTaskDate}
-            />
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={[styles.inputText, !selectedDate && { color: '#C2AEE0' }]}> 
+                {selectedDate
+                  ? selectedDate.toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    })
+                  : 'Selecione a data'}
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate || new Date()}
+              mode="date"
+              display="default"
+              onChange={handleDateChange}
+              minimumDate={new Date()}
+            />
+          )}
 
           {/* Seleção de Categoria */}
           <Text style={styles.categoryTitle}>Categoria</Text>
@@ -266,6 +296,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    fontSize: 16,
+    color: '#6D42A4',
+    fontWeight: '600',
+  },
+  inputText: {
     fontSize: 16,
     color: '#6D42A4',
     fontWeight: '600',
